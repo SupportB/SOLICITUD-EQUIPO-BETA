@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitud de Equipos · T.I.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta:#141414;      /* negro */
+    --carbon:#262626;     /* gris carbón */
+    --acero:#4E7F35;      /* verde medio */
+    --niebla:#EBEBEB;     /* gris claro de fondo */
+    --papel:#ffffff;
+    --senal:#8DCE4B;      /* verde brillante (acento) */
+    --verde-suave:#E2EDD6;/* verde pálido */
+    --ok:#4E7F35;
+    --linea:#C4C4C4;
+    --texto:#262626;
+    --texto-suave:#7C7C7C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Archivo',sans-serif;
+    background:var(--niebla);
+    color:var(--texto);
+    min-height:100vh;
+    padding:32px 16px 64px;
+  }
+  .contenedor{max-width:640px;margin:0 auto}
+
+  /* Cabecera tipo etiqueta de inventario */
+  header{
+    background:var(--tinta);
+    color:#fff;
+    border-radius:10px 10px 0 0;
+    padding:22px 28px;
+    display:flex;align-items:center;gap:16px;
+  }
+  .tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:2px;
+    background:var(--senal);color:#141414;
+    padding:4px 8px;border-radius:3px;font-weight:600;
+  }
+  header h1{font-size:20px;font-weight:700;font-stretch:87%}
+  header p{font-size:13px;color:#a9a9a9;margin-top:2px}
+
+  form{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-top:none;
+    border-radius:0 0 10px 10px;
+    padding:28px;
+  }
+  fieldset{border:none;margin-bottom:26px}
+  legend{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--acero);margin-bottom:14px;font-weight:600;
+    display:flex;align-items:center;gap:10px;width:100%;
+  }
+  legend::after{content:'';flex:1;height:1px;background:var(--linea)}
+
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+  .campo{margin-bottom:16px}
+  input[type=text], select, textarea{
+    width:100%;padding:11px 12px;
+    border:1px solid var(--linea);border-radius:6px;
+    font-family:'Archivo',sans-serif;font-size:14px;color:var(--texto);
+    background:#f7f7f7;transition:border .15s, box-shadow .15s;
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:none;border-color:var(--acero);
+    box-shadow:0 0 0 3px rgba(78,127,53,.2);
+  }
+  .fila{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:520px){.fila{grid-template-columns:1fr}}
+
+  /* Tarjetas de tipo de equipo */
+  .equipo{
+    border:1px solid var(--linea);border-radius:8px;
+    margin-bottom:12px;overflow:hidden;background:#f7f7f7;
+  }
+  .equipo-cab{
+    display:flex;align-items:center;gap:12px;
+    padding:13px 14px;cursor:pointer;user-select:none;
+  }
+  .equipo-cab input{width:18px;height:18px;accent-color:var(--acero);cursor:pointer}
+  .equipo-cab span{font-weight:600;font-size:14px}
+  .equipo-detalle{
+    display:none;padding:0 14px 14px 44px;
+    border-top:1px dashed var(--linea);padding-top:12px;
+  }
+  .equipo.activo{border-color:var(--acero);background:#fff}
+  .equipo.activo .equipo-detalle{display:block}
+  .mini{width:90px !important}
+  .radios{display:flex;gap:18px;margin-top:4px}
+  .radios label{display:flex;align-items:center;gap:6px;font-weight:400;margin:0;font-size:13px}
+  .radios input{accent-color:var(--acero)}
+  .nota{font-size:12px;color:var(--texto-suave);margin-top:4px}
+  .check-nota{
+    display:flex;align-items:center;gap:10px;margin-top:10px;
+    padding:10px 12px;background:var(--verde-suave);
+    border:1px solid #a9cd8a;border-left:4px solid var(--acero);
+    border-radius:6px;font-size:14px;color:var(--tinta);font-weight:600;
+    cursor:pointer;user-select:none;line-height:1.4;
+    transition:background .15s, border-color .15s;
+  }
+  .check-nota:hover{background:#d5e6c2;border-color:var(--acero)}
+  .check-nota input{
+    width:18px !important;height:18px !important;
+    accent-color:var(--acero);cursor:pointer;flex-shrink:0;margin-top:0 !important;
+  }
+  .check-nota .aux{
+    display:block;font-size:12px;color:var(--texto-suave);
+    font-weight:400;margin-top:2px;
+  }
+  .check-nota.marcado{
+    background:var(--senal);border-color:var(--acero);color:#141414;
+  }
+  .check-nota input{
+    width:16px;height:16px;accent-color:var(--acero);
+    cursor:pointer;flex-shrink:0;margin-top:1px;
+  }
+
+  button[type=submit]{
+    width:100%;padding:14px;border:none;border-radius:8px;
+    background:var(--tinta);color:#fff;
+    font-family:'Archivo',sans-serif;font-size:15px;font-weight:700;
+    letter-spacing:.5px;cursor:pointer;transition:background .15s;
+  }
+  button[type=submit]:hover{background:var(--acero)}
+  button[type=submit]:disabled{background:#a3a3a3;cursor:wait}
+
+  .error{
+    display:none;background:#fdeaea;border:1px solid #e5b4b4;
+    color:#8a2b2b;padding:12px 14px;border-radius:6px;
+    font-size:13px;margin-bottom:16px;
+  }
+
+  /* Confirmación: folio estilo etiqueta troquelada */
+  #confirmacion{display:none;text-align:center;padding:44px 28px}
+  .folio-tag{
+    display:inline-block;background:var(--tinta);color:#fff;
+    border-radius:10px;padding:26px 40px;position:relative;
+    box-shadow:0 8px 24px rgba(20,20,20,.3);
+  }
+  .folio-tag::before,.folio-tag::after{
+    content:'';position:absolute;top:50%;width:18px;height:18px;
+    background:var(--papel);border-radius:50%;transform:translateY(-50%);
+  }
+  .folio-tag::before{left:-9px}
+  .folio-tag::after{right:-9px}
+  .folio-tag small{
+    font-family:'JetBrains Mono',monospace;font-size:10px;
+    letter-spacing:3px;color:var(--senal);display:block;margin-bottom:8px;
+  }
+  .folio-tag strong{
+    font-family:'JetBrains Mono',monospace;font-size:28px;letter-spacing:2px;
+  }
+  #confirmacion p{margin-top:20px;font-size:14px;color:var(--texto-suave)}
+  #confirmacion button{
+    margin-top:22px;padding:11px 24px;border:1px solid var(--acero);
+    background:#fff;color:var(--acero);border-radius:6px;
+    font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;cursor:pointer;
+  }
+  #confirmacion button:hover{background:var(--niebla)}
+
+  /* Combobox con buscador */
+  .combo{position:relative}
+  .combo-input{padding-right:36px !important}
+  .combo-flecha{
+    position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    width:28px;height:28px;border:none;background:transparent;
+    color:var(--texto-suave);font-size:14px;cursor:pointer;border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .combo-flecha:hover{background:var(--niebla);color:var(--acero)}
+  .combo-lista{
+    position:absolute;top:calc(100% + 4px);left:0;right:0;
+    background:var(--papel);border:1px solid var(--linea);border-radius:6px;
+    list-style:none;max-height:220px;overflow-y:auto;
+    box-shadow:0 6px 18px rgba(20,20,20,.12);
+    z-index:50;display:none;padding:4px 0;
+  }
+  .combo.abierto .combo-lista{display:block}
+  .combo-lista li{
+    padding:9px 14px;font-size:13.5px;cursor:pointer;
+    display:flex;align-items:center;gap:8px;
+  }
+  .combo-lista li:hover, .combo-lista li.marcado{
+    background:var(--verde-suave);color:var(--tinta);
+  }
+  .combo-lista li.vacio{color:var(--texto-suave);cursor:default;font-style:italic}
+  .combo-lista li.vacio:hover{background:transparent}
+</style>
+</head>
+<body>
+<div class="contenedor">
+  <header>
+    <span class="tag">T.I.</span>
+    <div>
+      <h1>Solicitud de Equipos</h1>
+      <p>Registro de asignación de activos tecnológicos</p>
+    </div>
+  </header>
+
+  <form id="formSolicitud" autocomplete="off">
+    <div class="error" id="msgError"></div>
+
+    <fieldset>
+      <legend>Datos del solicitante</legend>
+      <div class="fila">
+        <div class="campo">
+          <label for="solicitante">Nombre del solicitante *</label>
+          <input type="text" id="solicitante" required placeholder="Nombre completo">
+        </div>
+        <div class="campo">
+          <label for="puestoSolicitante">Puesto del solicitante *</label>
+          <div class="combo" data-combo="puestoSolicitante">
+            <input type="text" id="puestoSolicitante" class="combo-input" required
+                   autocomplete="off" placeholder="Escribe o selecciona…"
+                   data-opciones="DIRECCIÓN|SUBDIRECCIÓN|GERENCIA|SUBGERENCIA">
+            <button type="button" class="combo-flecha" tabindex="-1" aria-label="Abrir lista">▾</button>
+            <ul class="combo-lista" role="listbox"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="fila">
+        <div class="campo">
+          <label for="area">Área *</label>
+          <div class="combo" data-combo="area">
+            <input type="text" id="area" class="combo-input" required
+                   autocomplete="off" placeholder="Escribe o selecciona…"
+                   data-opciones="TI|OPERACIONES|RECURSOS HUMANOS|FINANZAS|COMERCIAL|EFICIENCIA OPERATIVA|AUDITORIA">
+            <button type="button" class="combo-flecha" tabindex="-1" aria-label="Abrir lista">▾</button>
+            <ul class="combo-lista" role="listbox"></ul>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="departamento">Departamento *</label>
+          <div class="combo" data-combo="departamento">
+            <input type="text" id="departamento" class="combo-input" required
+                   autocomplete="off" placeholder="Escribe o selecciona…"
+                   data-opciones="DIRECCIÓN TI|OPERATIVO|NÓMINA|SERVICIOS GENERALES|RECLUTAMIENTO Y SELECCIÓN|ADMINISTRACIÓN DE PERSONAL|SOPORTE SERVICIOS TECNOLOGICOS|DIRECCIÓN OPERATIVA|FACTURACIÓN & COBRANZA|CONTABILIDAD|DIRECCIÓN FINANZAS|COBRANZA|DIRECCIÓN EO|TESORERIA|DIRECCIÓN RH|CAPACITACIÓN Y DESARROLLO|DIRECCIÓN COMERCIAL|COMPRAS|RELACIONES LABORALES|MEJORA CONTINUA|PROGRAMACION Y DESARROLLO">
+            <button type="button" class="combo-flecha" tabindex="-1" aria-label="Abrir lista">▾</button>
+            <ul class="combo-lista" role="listbox"></ul>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Datos del usuario asignado</legend>
+      <div class="campo">
+        <label for="usuarioAsignado">Nombre del usuario al que se asignarán los equipos *</label>
+        <input type="text" id="usuarioAsignado" required placeholder="Nombre completo del usuario final">
+        <label class="check-nota">
+          <input type="checkbox" id="chkNuevoIngreso">
+          <span>NUEVO INGRESO — POR DEFINIR<span class="aux">Marcar en caso de que aún no se conozca el dato</span></span>
+        </label>
+      </div>
+      <div class="fila">
+        <div class="campo">
+          <label for="puestoUsuario">Puesto del usuario asignado *</label>
+          <input type="text" id="puestoUsuario" required placeholder="Ej. Operador">
+        </div>
+        <div class="campo">
+          <label for="cuentaUsuario">Usuario Beta</label>
+          <input type="text" id="cuentaUsuario"  placeholder="Ej. BEAIS BMEXS">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Equipos solicitados</legend>
+
+      <div class="equipo" id="cardLaptop">
+        <label class="equipo-cab">
+          <input type="checkbox" id="chkLaptop">
+          <span>💻 Laptops</span>
+        </label>
+      </div>
+
+      <div class="equipo" id="cardLinea">
+        <label class="equipo-cab">
+          <input type="checkbox" id="chkLinea">
+          <span>📶 Línea telefónica</span>
+        </label>
+      </div>
+
+      <div class="equipo" id="cardCelular">
+        <label class="equipo-cab">
+          <input type="checkbox" id="chkCelular">
+          <span>📱 Equipo celular</span>
+        </label>
+      </div>
+
+      <div class="equipo" id="cardOtros">
+        <label class="equipo-cab">
+          <input type="checkbox" id="chkOtros">
+          <span>🖨️ Otros</span>
+        </label>
+        <div class="equipo-detalle">
+          <label for="txtOtros">Especifica el equipo que necesitas</label>
+          <input type="text" id="txtOtros" placeholder="Escribe aquí el equipo solicitado">
+        </div>
+      </div>
+    </fieldset>
+
+    <button type="submit" id="btnEnviar">Generar solicitud y folio</button>
+  </form>
+
+  <div id="confirmacion">
+    <div class="folio-tag">
+      <small>FOLIO DE SEGUIMIENTO</small>
+      <strong id="folioGenerado">—</strong>
+    </div>
+    <p>Tu solicitud fue registrada con estatus <b>PENDIENTE</b>.<br>Guarda el folio para dar seguimiento a la entrega.</p>
+    <button onclick="nuevaSolicitud()">Registrar otra solicitud</button>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   CONFIGURACIÓN — pega aquí la URL /exec de tu Apps Script
+   ================================================================ */
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyImNqNGxY2pNHsTCukOqk2TIPa3cIj6tXqxaNNq395NaV-Urw0S8nWkVWwLCJfj81_2w/exec';
+
+
+// Combobox con buscador (autocomplete): filtra opciones mientras se escribe
+document.querySelectorAll('.combo').forEach(function(combo){
+  const input = combo.querySelector('.combo-input');
+  const flecha = combo.querySelector('.combo-flecha');
+  const lista = combo.querySelector('.combo-lista');
+  const opciones = (input.dataset.opciones || '').split('|').filter(Boolean);
+
+  function render(filtro){
+    const q = (filtro || '').trim().toLowerCase();
+    const res = opciones.filter(function(o){ return o.toLowerCase().includes(q); });
+    if (res.length === 0){
+      lista.innerHTML = '<li class="vacio">Sin coincidencias — puedes escribir libremente</li>';
+      return;
+    }
+    lista.innerHTML = res.map(function(o){ return '<li role="option">' + o + '</li>'; }).join('');
+    lista.querySelectorAll('li').forEach(function(li){
+      li.addEventListener('mousedown', function(ev){
+        ev.preventDefault();
+        input.value = li.textContent;
+        combo.classList.remove('abierto');
+      });
+    });
+  }
+
+  function abrir(){ combo.classList.add('abierto'); render(input.value); }
+  function cerrar(){ combo.classList.remove('abierto'); }
+
+  input.addEventListener('focus', abrir);
+  input.addEventListener('input', function(){ render(input.value); if(!combo.classList.contains('abierto')) abrir(); });
+  input.addEventListener('blur', function(){ setTimeout(cerrar, 120); });
+  flecha.addEventListener('click', function(){
+    if (combo.classList.contains('abierto')) { cerrar(); }
+    else { input.focus(); abrir(); }
+  });
+
+  // Navegación con teclado
+  let idx = -1;
+  input.addEventListener('keydown', function(ev){
+    const items = lista.querySelectorAll('li:not(.vacio)');
+    if (ev.key === 'ArrowDown'){
+      ev.preventDefault();
+      if (!combo.classList.contains('abierto')) abrir();
+      idx = Math.min(idx + 1, items.length - 1);
+    } else if (ev.key === 'ArrowUp'){
+      ev.preventDefault();
+      idx = Math.max(idx - 1, 0);
+    } else if (ev.key === 'Enter' && combo.classList.contains('abierto') && idx >= 0){
+      ev.preventDefault();
+      input.value = items[idx].textContent;
+      cerrar();
+      idx = -1;
+      return;
+    } else if (ev.key === 'Escape'){
+      cerrar(); idx = -1; return;
+    } else { return; }
+    items.forEach(function(li, i){ li.classList.toggle('marcado', i === idx); });
+    if (items[idx]) items[idx].scrollIntoView({ block: 'nearest' });
+  });
+});
+
+// Nuevo ingreso: autollenar "Por definir" en Nombre del usuario asignado y Usuario Beta
+document.getElementById('chkNuevoIngreso').addEventListener('change', function(){
+  this.closest('.check-nota').classList.toggle('marcado', this.checked);
+  const nombre = document.getElementById('usuarioAsignado');
+  const cuenta = document.getElementById('cuentaUsuario');
+  if (this.checked){
+    nombre.value = 'Por definir';
+    cuenta.value = 'Por definir';
+    nombre.readOnly = true;
+    cuenta.readOnly = true;
+    nombre.style.background = '#ededed';
+    cuenta.style.background = '#ededed';
+    document.getElementById('puestoUsuario').focus();
+  } else {
+    nombre.value = '';
+    cuenta.value = '';
+    nombre.readOnly = false;
+    cuenta.readOnly = false;
+    nombre.style.background = '';
+    cuenta.style.background = '';
+    nombre.focus();
+  }
+});
+
+// Mostrar/ocultar detalle de cada tarjeta de equipo
+[['chkLaptop','cardLaptop'],['chkLinea','cardLinea'],['chkCelular','cardCelular'],['chkOtros','cardOtros']].forEach(function(par){
+  document.getElementById(par[0]).addEventListener('change', function(){
+    document.getElementById(par[1]).classList.toggle('activo', this.checked);
+  });
+});
+
+document.getElementById('formSolicitud').addEventListener('submit', async function(ev){
+  ev.preventDefault();
+  const err = document.getElementById('msgError');
+  err.style.display = 'none';
+
+  // Construir resumen de equipos
+  const equipos = [];
+  if (document.getElementById('chkLaptop').checked){
+    equipos.push('LAPTOP');
+  }
+  if (document.getElementById('chkLinea').checked){
+    equipos.push('LINEA TELEFONICA');
+  }
+  if (document.getElementById('chkCelular').checked){
+    equipos.push('EQUIPO CELULAR');
+  }
+  if (document.getElementById('chkOtros').checked){
+    const otro = document.getElementById('txtOtros').value.trim();
+    if (!otro){
+      err.textContent = 'En "Otros", escribe el equipo que necesitas.';
+      err.style.display = 'block';
+      return;
+    }
+    equipos.push('OTRO: ' + otro.toUpperCase());
+  }
+  if (equipos.length === 0){
+    err.textContent = 'Selecciona al menos un tipo de equipo.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const payload = {
+    action: 'crear',
+    solicitante: document.getElementById('solicitante').value.trim(),
+    puestoSolicitante: document.getElementById('puestoSolicitante').value.trim(),
+    area: document.getElementById('area').value.trim(),
+    departamento: document.getElementById('departamento').value.trim(),
+    usuarioAsignado: document.getElementById('usuarioAsignado').value.trim(),
+    puestoUsuario: document.getElementById('puestoUsuario').value.trim(),
+    cuentaUsuario: document.getElementById('cuentaUsuario').value.trim(),
+    equipos: equipos.join(' | ')
+  };
+
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  try{
+    // text/plain evita el preflight CORS: Apps Script lo acepta sin problema
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'Error del servidor');
+
+    document.getElementById('folioGenerado').textContent = data.folio;
+    document.getElementById('formSolicitud').style.display = 'none';
+    document.getElementById('confirmacion').style.display = 'block';
+  }catch(e){
+    err.textContent = 'No se pudo registrar la solicitud: ' + e.message;
+    err.style.display = 'block';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Generar solicitud y folio';
+  }
+});
+
+function nuevaSolicitud(){
+  document.getElementById('formSolicitud').reset();
+  ['usuarioAsignado','cuentaUsuario'].forEach(function(id){
+    const campo = document.getElementById(id);
+    campo.readOnly = false;
+    campo.style.background = '';
+  });
+  document.querySelectorAll('.equipo').forEach(function(c){ c.classList.remove('activo'); });
+  document.getElementById('confirmacion').style.display = 'none';
+  document.getElementById('formSolicitud').style.display = 'block';
+}
+</script>
+</body>
+</html>
