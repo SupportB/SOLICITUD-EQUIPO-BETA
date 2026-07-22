@@ -45,8 +45,8 @@
     padding:4px 8px;border-radius:3px;font-weight:600;
   }
   .logo{
-    height:85px;width:auto;display:block;
-    background:#fff;padding:1px 1px;border-radius:1px;
+    height:50px;width:auto;display:block;
+    background:#fff;padding:8px 14px;border-radius:8px;
     flex-shrink:0;
   }
   header h1{font-size:20px;font-weight:700;font-stretch:87%}
@@ -200,12 +200,140 @@
   }
   .combo-lista li.vacio{color:var(--texto-suave);cursor:default;font-style:italic}
   .combo-lista li.vacio:hover{background:transparent}
+
+  /* Tarjetas de opción tipo radio */
+  .opciones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:520px){.opciones{grid-template-columns:1fr}}
+  .opcion{
+    display:flex;align-items:center;gap:11px;
+    padding:14px;border:1px solid var(--linea);border-radius:8px;
+    background:#f7f7f7;cursor:pointer;user-select:none;
+    font-size:14px;font-weight:600;margin:0;
+    transition:all .15s;
+  }
+  .opcion:hover{border-color:var(--acero);background:#fff}
+  .opcion input{width:18px;height:18px;accent-color:var(--acero);cursor:pointer;flex-shrink:0}
+  .opcion.activa{
+    border-color:var(--acero);background:var(--verde-suave);
+    box-shadow:0 0 0 2px rgba(78,127,53,.15);
+  }
+
+  /* Lista vertical de motivos de renovación */
+  .opciones-lista{display:flex;flex-direction:column;gap:10px}
+  .opciones-lista .opcion{align-items:flex-start}
+  .opciones-lista .opcion input{margin-top:2px}
+  .opcion-txt{display:block;line-height:1.35}
+  .opcion-txt .desc{
+    display:block;font-size:12px;font-weight:400;
+    color:var(--texto-suave);margin-top:3px;
+  }
+  .opcion.activa .opcion-txt .desc{color:#4a5c3d}
+
+  /* Bloque condicional de renovación */
+  #bloqueRenovacion{
+    display:none;margin-top:18px;padding:18px;
+    background:#fbfcfa;border:1px solid var(--linea);
+    border-left:4px solid var(--acero);border-radius:8px;
+  }
+  #bloqueRenovacion.visible{display:block}
+  #bloqueRenovacion .sub-legend{
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:2px;text-transform:uppercase;color:var(--acero);
+    font-weight:600;margin-bottom:12px;display:block;
+  }
+
+  /* Uploader de evidencias */
+  .dropzone{
+    border:2px dashed var(--linea);border-radius:8px;
+    padding:22px 16px;text-align:center;cursor:pointer;
+    background:#fff;transition:all .15s;
+  }
+  .dropzone:hover, .dropzone.drag{
+    border-color:var(--acero);background:var(--verde-suave);
+  }
+  .dropzone-icono{font-size:26px;display:block;margin-bottom:6px}
+  .dropzone-txt{font-size:13.5px;font-weight:600;color:var(--texto)}
+  .dropzone-sub{font-size:12px;color:var(--texto-suave);margin-top:3px}
+  .contador-img{
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:1px;margin-top:10px;font-weight:600;
+  }
+  .contador-img.falta{color:#a55810}
+  .contador-img.listo{color:var(--ok)}
+  .previews{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+    gap:10px;margin-top:12px;
+  }
+  .preview{
+    position:relative;border-radius:6px;overflow:hidden;
+    border:1px solid var(--linea);aspect-ratio:1;background:#f7f7f7;
+  }
+  .preview img{width:100%;height:100%;object-fit:cover;display:block}
+  .preview button{
+    position:absolute;top:4px;right:4px;width:22px;height:22px;
+    border:none;border-radius:50%;background:rgba(20,20,20,.78);
+    color:#fff;font-size:13px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .preview button:hover{background:#a12b2b}
+
+  /* Overlay con barra de progreso durante el envío */
+  #overlayEnvio{
+    display:none;position:fixed;inset:0;z-index:200;
+    background:rgba(20,20,20,.55);backdrop-filter:blur(3px);
+    align-items:center;justify-content:center;padding:20px;
+  }
+  #overlayEnvio.visible{display:flex}
+  .panel-envio{
+    background:var(--papel);border-radius:12px;
+    padding:30px 32px;width:100%;max-width:420px;
+    box-shadow:0 16px 48px rgba(20,20,20,.35);
+    text-align:center;
+  }
+  .panel-envio h3{
+    font-size:16px;font-weight:700;color:var(--tinta);margin-bottom:6px;
+  }
+  .panel-envio .etapa{
+    font-size:13px;color:var(--texto-suave);margin-bottom:20px;min-height:18px;
+  }
+  .barra-fondo{
+    height:10px;background:var(--niebla);border-radius:6px;
+    overflow:hidden;position:relative;
+  }
+  .barra-relleno{
+    height:100%;width:0%;border-radius:6px;
+    background:linear-gradient(90deg,var(--acero),var(--senal));
+    transition:width .25s ease;
+  }
+  /* Animación de rayas cuando el progreso es indeterminado (procesando en servidor) */
+  .barra-fondo.indeterminado .barra-relleno{
+    width:100% !important;
+    background:repeating-linear-gradient(
+      -45deg,
+      var(--acero) 0 12px,
+      var(--senal) 12px 24px
+    );
+    background-size:200% 100%;
+    animation:rayas 1s linear infinite;
+  }
+  @keyframes rayas{
+    from{background-position:0 0}
+    to{background-position:48px 0}
+  }
+  .porcentaje{
+    font-family:'JetBrains Mono',monospace;
+    font-size:22px;font-weight:600;color:var(--tinta);margin-top:14px;
+  }
+  .detalle-envio{
+    font-size:11.5px;color:var(--texto-suave);margin-top:8px;
+    font-family:'JetBrains Mono',monospace;letter-spacing:.5px;
+  }
 </style>
 </head>
 <body>
 <div class="contenedor">
   <header>
-    <img src="LOGO.svg" alt="BETA" class="logo">
+    <img src="LOGO.SVG" alt="BETA" class="logo">
     <div>
       <h1>Solicitud de Equipos</h1>
       <p>Registro de asignación de activos tecnológicos</p>
@@ -279,6 +407,64 @@
     </fieldset>
 
     <fieldset>
+      <legend>Motivo de la solicitud</legend>
+      <div class="opciones">
+        <label class="opcion" id="optNuevoIngreso">
+          <input type="radio" name="motivoSolicitud" value="NUEVO INGRESO" required>
+          <span>🆕 Nuevo ingreso</span>
+        </label>
+        <label class="opcion" id="optRenovacion">
+          <input type="radio" name="motivoSolicitud" value="RENOVACIÓN DE EQUIPO">
+          <span>🔄 Renovación de equipo</span>
+        </label>
+      </div>
+
+      <!-- Bloque condicional: sólo visible si se elige RENOVACIÓN DE EQUIPO -->
+      <div id="bloqueRenovacion">
+        <span class="sub-legend">Motivo de renovación</span>
+        <div class="opciones-lista">
+          <label class="opcion">
+            <input type="radio" name="motivoRenovacion" value="DAÑO">
+            <span class="opcion-txt">Daño</span>
+          </label>
+          <label class="opcion">
+            <input type="radio" name="motivoRenovacion" value="EXTRAVÍO">
+            <span class="opcion-txt">Extravío</span>
+          </label>
+          <label class="opcion">
+            <input type="radio" name="motivoRenovacion" value="IT LIFE CYCLE">
+            <span class="opcion-txt">IT Life Cycle
+              <span class="desc">El equipo cumplió su ciclo de vida útil</span>
+            </span>
+          </label>
+          <label class="opcion">
+            <input type="radio" name="motivoRenovacion" value="RENDIMIENTO Y OBSOLESCENCIA TECNO-OPERATIVA">
+            <span class="opcion-txt">Rendimiento y obsolescencia tecno-operativa
+              <span class="desc">Incompatibilidad con software, degradación de la batería, sobrecalentamiento continuo por desgaste físico</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="campo" style="margin-top:16px;margin-bottom:16px">
+          <label for="descripcion">Descripción *</label>
+          <input type="text" id="descripcion" placeholder="Describe la situación del equipo">
+        </div>
+
+        <div class="campo" style="margin-bottom:0">
+          <label>Evidencias fotográficas * <span style="font-weight:400;color:var(--texto-suave)">(mínimo 2, máximo 4)</span></label>
+          <div class="dropzone" id="dropzone">
+            <span class="dropzone-icono">📷</span>
+            <span class="dropzone-txt">Haz clic o arrastra las imágenes aquí</span>
+            <span class="dropzone-sub">JPG o PNG · se comprimen automáticamente</span>
+          </div>
+          <input type="file" id="inputImagenes" accept="image/*" multiple style="display:none">
+          <div class="contador-img falta" id="contadorImg">0 DE 4 · FALTAN 2</div>
+          <div class="previews" id="previews"></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
       <legend>Equipos solicitados</legend>
 
       <div class="equipo" id="cardLaptop">
@@ -325,6 +511,19 @@
     <p>Tu solicitud fue registrada con estatus <b>PENDIENTE</b>.<br>Guarda el folio para dar seguimiento a la entrega.</p>
     <button onclick="nuevaSolicitud()">Registrar otra solicitud</button>
   </div>
+
+  <!-- Overlay de progreso durante el envío -->
+  <div id="overlayEnvio">
+    <div class="panel-envio">
+      <h3>Registrando solicitud</h3>
+      <p class="etapa" id="etapaEnvio">Preparando información…</p>
+      <div class="barra-fondo" id="barraFondo">
+        <div class="barra-relleno" id="barraRelleno"></div>
+      </div>
+      <div class="porcentaje" id="porcentajeEnvio">0%</div>
+      <div class="detalle-envio" id="detalleEnvio"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -333,6 +532,255 @@
    ================================================================ */
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyImNqNGxY2pNHsTCukOqk2TIPa3cIj6tXqxaNNq395NaV-Urw0S8nWkVWwLCJfj81_2w/exec';
 
+
+
+
+/* ================= BARRA DE PROGRESO ================= */
+function mostrarProgreso(mostrar){
+  document.getElementById('overlayEnvio').classList.toggle('visible', mostrar);
+  if (mostrar){
+    setProgreso(0);
+    document.getElementById('barraFondo').classList.remove('indeterminado');
+    document.getElementById('detalleEnvio').textContent = '';
+  }
+}
+
+function setProgreso(pct, etapa){
+  const p = Math.max(0, Math.min(100, Math.round(pct)));
+  document.getElementById('barraRelleno').style.width = p + '%';
+  document.getElementById('porcentajeEnvio').textContent = p + '%';
+  if (etapa) document.getElementById('etapaEnvio').textContent = etapa;
+}
+
+// Modo indeterminado: el servidor está trabajando y no sabemos cuánto falta
+function setIndeterminado(etapa){
+  document.getElementById('barraFondo').classList.add('indeterminado');
+  document.getElementById('porcentajeEnvio').textContent = '···';
+  if (etapa) document.getElementById('etapaEnvio').textContent = etapa;
+}
+
+function setDetalle(txt){
+  document.getElementById('detalleEnvio').textContent = txt || '';
+}
+
+/**
+ * Envía una petición a Apps Script.
+ * Se usa fetch con Content-Type text/plain porque así la petición es "simple"
+ * y el navegador NO dispara un preflight OPTIONS (Apps Script no responde a OPTIONS).
+ *
+ * Importante: NO se puede usar xhr.upload.onprogress para medir el avance —
+ * registrar ese listener convierte la petición en "no simple" y provoca el
+ * preflight que Apps Script rechaza. Por eso el progreso se mide contando
+ * peticiones completadas: primero el registro, luego cada imagen por separado.
+ */
+async function peticion(url, payload){
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+  if (!resp.ok) throw new Error('Error HTTP ' + resp.status);
+  const data = await resp.json();
+  if (!data.ok) throw new Error(data.error || 'Error del servidor');
+  return data;
+}
+
+/** Genera un identificador único para poder recuperar la solicitud si se pierde la respuesta */
+function generarToken(){
+  return 'T' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+/** Consulta por GET el folio asociado a un token (las peticiones GET sí regresan bien) */
+async function recuperarFolioPorToken(token){
+  const resp = await fetch(WEB_APP_URL + '?action=buscarToken&token=' + encodeURIComponent(token));
+  const data = await resp.json();
+  return data.encontrado ? data.folio : null;
+}
+
+/**
+ * Registra la solicitud y luego sube las evidencias una por una,
+ * actualizando la barra de progreso con avance REAL.
+ *
+ * Si el POST se guarda pero el navegador no puede leer la respuesta
+ * (fallo de CORS en la redirección de Google), se recupera el folio
+ * consultando por token en lugar de dar la solicitud por perdida.
+ */
+async function enviarSolicitud(payload, listaImagenes){
+  const totalPasos = 1 + listaImagenes.length;
+  let paso = 0;
+
+  const avanzar = function(etapa, detalle){
+    paso++;
+    setProgreso((paso / totalPasos) * 100, etapa);
+    setDetalle(detalle || '');
+  };
+
+  // --- Paso 1: crear el registro y obtener el folio ---
+  setProgreso(2, 'Registrando solicitud…');
+  setDetalle(listaImagenes.length ? 'Paso 1 de ' + totalPasos : '');
+
+  const token = generarToken();
+  payload.token = token;
+
+  let folio = null;
+  try{
+    const data = await peticion(WEB_APP_URL, payload);
+    folio = data.folio;
+  }catch(e){
+    // El registro pudo haberse guardado aunque la respuesta se perdiera.
+    setDetalle('Verificando si se registró…');
+    await new Promise(function(r){ setTimeout(r, 2000); });
+    folio = await recuperarFolioPorToken(token);
+    if (!folio){
+      // Segundo intento por si Sheets tardó en reflejar la fila
+      await new Promise(function(r){ setTimeout(r, 2500); });
+      folio = await recuperarFolioPorToken(token);
+    }
+    if (!folio) throw e;   // realmente no se guardó
+  }
+
+  avanzar('Solicitud registrada', 'Folio ' + folio);
+
+  // --- Pasos 2..N: subir cada imagen ---
+  const fallidas = [];
+  for (let i = 0; i < listaImagenes.length; i++){
+    setDetalle('Subiendo imagen ' + (i + 1) + ' de ' + listaImagenes.length + '…');
+    try{
+      await peticion(WEB_APP_URL, {
+        action: 'subirEvidencia',
+        folio: folio,
+        indice: i + 1,
+        dataUrl: listaImagenes[i].dataUrl
+      });
+      avanzar('Guardando evidencias en Drive…',
+              'Imagen ' + (i + 1) + ' de ' + listaImagenes.length + ' guardada');
+    }catch(e){
+      fallidas.push(i + 1);
+      avanzar('Guardando evidencias en Drive…',
+              '⚠️ Falló la imagen ' + (i + 1));
+    }
+  }
+
+  return { folio: folio, fallidas: fallidas };
+}
+
+/* ================= MOTIVO DE LA SOLICITUD ================= */
+const MIN_IMG = 2, MAX_IMG = 4;
+let imagenes = []; // {nombre, dataUrl}
+
+// Resaltar la tarjeta activa y mostrar/ocultar el bloque de renovación
+document.querySelectorAll('input[name=motivoSolicitud]').forEach(function(r){
+  r.addEventListener('change', function(){
+    document.querySelectorAll('input[name=motivoSolicitud]').forEach(function(x){
+      x.closest('.opcion').classList.toggle('activa', x.checked);
+    });
+    const esRenovacion = this.value === 'RENOVACIÓN DE EQUIPO';
+    document.getElementById('bloqueRenovacion').classList.toggle('visible', esRenovacion);
+    if (!esRenovacion){
+      // Limpiar datos de renovación si se cambia a nuevo ingreso
+      document.querySelectorAll('input[name=motivoRenovacion]').forEach(function(x){
+        x.checked = false;
+        x.closest('.opcion').classList.remove('activa');
+      });
+      document.getElementById('descripcion').value = '';
+      imagenes = [];
+      renderPreviews();
+    }
+  });
+});
+
+// Resaltar tarjeta activa del motivo de renovación
+document.querySelectorAll('input[name=motivoRenovacion]').forEach(function(r){
+  r.addEventListener('change', function(){
+    document.querySelectorAll('input[name=motivoRenovacion]').forEach(function(x){
+      x.closest('.opcion').classList.toggle('activa', x.checked);
+    });
+  });
+});
+
+/* ================= EVIDENCIAS FOTOGRÁFICAS ================= */
+const dropzone = document.getElementById('dropzone');
+const inputImagenes = document.getElementById('inputImagenes');
+
+dropzone.addEventListener('click', function(){ inputImagenes.click(); });
+inputImagenes.addEventListener('change', function(){ procesarArchivos(this.files); this.value = ''; });
+
+['dragenter','dragover'].forEach(function(ev){
+  dropzone.addEventListener(ev, function(e){ e.preventDefault(); dropzone.classList.add('drag'); });
+});
+['dragleave','drop'].forEach(function(ev){
+  dropzone.addEventListener(ev, function(e){ e.preventDefault(); dropzone.classList.remove('drag'); });
+});
+dropzone.addEventListener('drop', function(e){ procesarArchivos(e.dataTransfer.files); });
+
+// Comprimir la imagen antes de enviarla (evita payloads enormes hacia Apps Script)
+function comprimir(file){
+  return new Promise(function(resolve, reject){
+    const lector = new FileReader();
+    lector.onload = function(){
+      const img = new Image();
+      img.onload = function(){
+        const MAX_LADO = 1280;
+        let w = img.width, h = img.height;
+        if (w > MAX_LADO || h > MAX_LADO){
+          if (w > h){ h = Math.round(h * MAX_LADO / w); w = MAX_LADO; }
+          else { w = Math.round(w * MAX_LADO / h); h = MAX_LADO; }
+        }
+        const lienzo = document.createElement('canvas');
+        lienzo.width = w; lienzo.height = h;
+        lienzo.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(lienzo.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = function(){ reject(new Error('Imagen no válida')); };
+      img.src = lector.result;
+    };
+    lector.onerror = function(){ reject(new Error('No se pudo leer el archivo')); };
+    lector.readAsDataURL(file);
+  });
+}
+
+async function procesarArchivos(archivos){
+  const err = document.getElementById('msgError');
+  for (const file of archivos){
+    if (imagenes.length >= MAX_IMG){
+      err.textContent = 'Máximo ' + MAX_IMG + ' imágenes. Elimina alguna para agregar otra.';
+      err.style.display = 'block';
+      break;
+    }
+    if (!file.type.startsWith('image/')) continue;
+    try{
+      const dataUrl = await comprimir(file);
+      imagenes.push({ nombre: file.name, dataUrl: dataUrl });
+    }catch(e){
+      err.textContent = 'No se pudo procesar "' + file.name + '".';
+      err.style.display = 'block';
+    }
+  }
+  renderPreviews();
+}
+
+function renderPreviews(){
+  const cont = document.getElementById('previews');
+  cont.innerHTML = imagenes.map(function(im, i){
+    return '<div class="preview"><img src="' + im.dataUrl + '" alt="Evidencia ' + (i+1) + '">' +
+           '<button type="button" onclick="quitarImagen(' + i + ')" title="Quitar">✕</button></div>';
+  }).join('');
+
+  const c = document.getElementById('contadorImg');
+  const n = imagenes.length;
+  if (n < MIN_IMG){
+    c.textContent = n + ' DE ' + MAX_IMG + ' · FALTAN ' + (MIN_IMG - n);
+    c.className = 'contador-img falta';
+  } else {
+    c.textContent = n + ' DE ' + MAX_IMG + ' · LISTO';
+    c.className = 'contador-img listo';
+  }
+}
+
+function quitarImagen(i){
+  imagenes.splice(i, 1);
+  renderPreviews();
+}
 
 // Combobox con buscador (autocomplete): filtra opciones mientras se escribe
 document.querySelectorAll('.combo').forEach(function(combo){
@@ -430,6 +878,39 @@ document.getElementById('formSolicitud').addEventListener('submit', async functi
   const err = document.getElementById('msgError');
   err.style.display = 'none';
 
+  // ---- Validar motivo de la solicitud ----
+  const radioMotivo = document.querySelector('input[name=motivoSolicitud]:checked');
+  if (!radioMotivo){
+    err.textContent = 'Selecciona el motivo de la solicitud.';
+    err.style.display = 'block';
+    return;
+  }
+  const motivoSolicitud = radioMotivo.value;
+  let motivoRenovacion = '', descripcion = '';
+
+  if (motivoSolicitud === 'RENOVACIÓN DE EQUIPO'){
+    const radioRenov = document.querySelector('input[name=motivoRenovacion]:checked');
+    if (!radioRenov){
+      err.textContent = 'Selecciona el motivo de renovación.';
+      err.style.display = 'block';
+      return;
+    }
+    motivoRenovacion = radioRenov.value;
+
+    descripcion = document.getElementById('descripcion').value.trim();
+    if (!descripcion){
+      err.textContent = 'Escribe la descripción de la situación del equipo.';
+      err.style.display = 'block';
+      document.getElementById('descripcion').focus();
+      return;
+    }
+    if (imagenes.length < MIN_IMG){
+      err.textContent = 'Adjunta al menos ' + MIN_IMG + ' imágenes como evidencia (llevas ' + imagenes.length + ').';
+      err.style.display = 'block';
+      return;
+    }
+  }
+
   // Construir resumen de equipos
   const equipos = [];
   if (document.getElementById('chkLaptop').checked){
@@ -465,29 +946,42 @@ document.getElementById('formSolicitud').addEventListener('submit', async functi
     usuarioAsignado: document.getElementById('usuarioAsignado').value.trim(),
     puestoUsuario: document.getElementById('puestoUsuario').value.trim(),
     cuentaUsuario: document.getElementById('cuentaUsuario').value.trim(),
+    motivoSolicitud: motivoSolicitud,
+    motivoRenovacion: motivoRenovacion,
+    descripcion: descripcion,
     equipos: equipos.join(' | ')
+    // Las imágenes NO van aquí: se envían después, una por una,
+    // para poder mostrar progreso real y evitar payloads enormes.
   };
 
   const btn = document.getElementById('btnEnviar');
   btn.disabled = true;
   btn.textContent = 'Enviando…';
 
-  try{
-    // text/plain evita el preflight CORS: Apps Script lo acepta sin problema
-    const resp = await fetch(WEB_APP_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'Error del servidor');
+  mostrarProgreso(true);
+  setProgreso(0, 'Preparando información…');
 
-    document.getElementById('folioGenerado').textContent = data.folio;
+  try{
+    const resultado = await enviarSolicitud(payload, imagenes);
+
+    setProgreso(100, '¡Solicitud registrada!');
+    setDetalle(resultado.fallidas.length
+      ? '⚠️ No se pudieron guardar las imágenes: ' + resultado.fallidas.join(', ')
+      : 'Folio ' + resultado.folio);
+
+    await new Promise(function(r){ setTimeout(r, resultado.fallidas.length ? 2200 : 700); });
+    mostrarProgreso(false);
+
+    document.getElementById('folioGenerado').textContent = resultado.folio;
     document.getElementById('formSolicitud').style.display = 'none';
     document.getElementById('confirmacion').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
   }catch(e){
+    mostrarProgreso(false);
     err.textContent = 'No se pudo registrar la solicitud: ' + e.message;
     err.style.display = 'block';
+    err.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }finally{
     btn.disabled = false;
     btn.textContent = 'Generar solicitud y folio';
@@ -502,6 +996,10 @@ function nuevaSolicitud(){
     campo.style.background = '';
   });
   document.querySelectorAll('.equipo').forEach(function(c){ c.classList.remove('activo'); });
+  document.querySelectorAll('.opcion').forEach(function(o){ o.classList.remove('activa'); });
+  document.getElementById('bloqueRenovacion').classList.remove('visible');
+  imagenes = [];
+  renderPreviews();
   document.getElementById('confirmacion').style.display = 'none';
   document.getElementById('formSolicitud').style.display = 'block';
 }
