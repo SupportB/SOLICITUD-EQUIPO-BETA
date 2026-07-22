@@ -328,12 +328,34 @@
     font-size:11.5px;color:var(--texto-suave);margin-top:8px;
     font-family:'JetBrains Mono',monospace;letter-spacing:.5px;
   }
+
+  /* Botones de captura / selección de imágenes */
+  .botones-img{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  .btn-img{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    padding:14px 12px;border:1px solid var(--acero);border-radius:8px;
+    background:#fff;color:var(--acero);cursor:pointer;
+    font-family:'Archivo',sans-serif;font-size:13.5px;font-weight:600;
+    transition:all .15s;
+  }
+  .btn-img:hover{background:var(--verde-suave)}
+  .btn-img:active{transform:scale(.98)}
+  .btn-img-icono{font-size:17px;line-height:1}
+  .btn-img:disabled{
+    opacity:.45;cursor:not-allowed;border-color:var(--linea);color:var(--texto-suave);
+  }
+  .btn-img:disabled:hover{background:#fff}
+
+  /* En móvil la zona de arrastre no aplica: se oculta */
+  @media (hover:none) and (pointer:coarse){
+    #dropzone{display:none}
+  }
 </style>
 </head>
 <body>
 <div class="contenedor">
   <header>
-    <img src="LOGO.svg" alt="BETA" class="logo">
+    <img src="LOGO.SVG" alt="BETA" class="logo">
     <div>
       <h1>Solicitud de Equipos</h1>
       <p>Registro de asignación de activos tecnológicos</p>
@@ -452,12 +474,27 @@
 
         <div class="campo" style="margin-bottom:0">
           <label>Evidencias fotográficas * <span style="font-weight:400;color:var(--texto-suave)">(mínimo 2, máximo 4)</span></label>
-          <div class="dropzone" id="dropzone">
-            <span class="dropzone-icono">📷</span>
-            <span class="dropzone-txt">Haz clic o arrastra las imágenes aquí</span>
-            <span class="dropzone-sub">JPG o PNG · se comprimen automáticamente</span>
+          <div class="botones-img">
+            <button type="button" class="btn-img" id="btnCamara">
+              <span class="btn-img-icono">📸</span>
+              <span>Tomar foto</span>
+            </button>
+            <button type="button" class="btn-img" id="btnGaleria">
+              <span class="btn-img-icono">🖼️</span>
+              <span>Elegir imágenes</span>
+            </button>
           </div>
-          <input type="file" id="inputImagenes" accept="image/*" multiple style="display:none">
+
+          <div class="dropzone" id="dropzone">
+            <span class="dropzone-icono">⬆️</span>
+            <span class="dropzone-txt">o arrastra las imágenes aquí</span>
+            <span class="dropzone-sub">JPG o PNG · puedes seleccionar varias a la vez</span>
+          </div>
+
+          <!-- Cámara: capture abre directo la cámara trasera en móvil -->
+          <input type="file" id="inputCamara" accept="image/*" capture="environment" style="display:none">
+          <!-- Galería: multiple permite elegir varias imágenes de una sola vez -->
+          <input type="file" id="inputGaleria" accept="image/*" multiple style="display:none">
           <div class="contador-img falta" id="contadorImg">0 DE 4 · FALTAN 2</div>
           <div class="previews" id="previews"></div>
         </div>
@@ -700,10 +737,49 @@ document.querySelectorAll('input[name=motivoRenovacion]').forEach(function(r){
 
 /* ================= EVIDENCIAS FOTOGRÁFICAS ================= */
 const dropzone = document.getElementById('dropzone');
-const inputImagenes = document.getElementById('inputImagenes');
+const inputCamara = document.getElementById('inputCamara');
+const inputGaleria = document.getElementById('inputGaleria');
+const btnCamara = document.getElementById('btnCamara');
+const btnGaleria = document.getElementById('btnGaleria');
 
-dropzone.addEventListener('click', function(){ inputImagenes.click(); });
-inputImagenes.addEventListener('change', function(){ procesarArchivos(this.files); this.value = ''; });
+// Botón cámara: en móvil abre directamente la cámara (capture="environment")
+btnCamara.addEventListener('click', function(){
+  if (imagenes.length >= MAX_IMG) return avisoLleno();
+  inputCamara.click();
+});
+
+// Botón galería: permite seleccionar VARIAS imágenes de una sola vez
+btnGaleria.addEventListener('click', function(){
+  if (imagenes.length >= MAX_IMG) return avisoLleno();
+  inputGaleria.click();
+});
+
+[inputCamara, inputGaleria].forEach(function(inp){
+  inp.addEventListener('change', function(){
+    procesarArchivos(this.files);
+    this.value = '';   // permite volver a elegir el mismo archivo
+  });
+});
+
+// La zona de arrastre sigue disponible en escritorio
+dropzone.addEventListener('click', function(){
+  if (imagenes.length >= MAX_IMG) return avisoLleno();
+  inputGaleria.click();
+});
+
+function avisoLleno(){
+  const err = document.getElementById('msgError');
+  err.textContent = 'Ya tienes el máximo de ' + MAX_IMG + ' imágenes. Elimina alguna para agregar otra.';
+  err.style.display = 'block';
+  err.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+// Bloquear los botones cuando se llega al máximo
+function actualizarBotonesImg(){
+  const lleno = imagenes.length >= MAX_IMG;
+  btnCamara.disabled = lleno;
+  btnGaleria.disabled = lleno;
+}
 
 ['dragenter','dragover'].forEach(function(ev){
   dropzone.addEventListener(ev, function(e){ e.preventDefault(); dropzone.classList.add('drag'); });
@@ -741,13 +817,21 @@ function comprimir(file){
 
 async function procesarArchivos(archivos){
   const err = document.getElementById('msgError');
-  for (const file of archivos){
-    if (imagenes.length >= MAX_IMG){
-      err.textContent = 'Máximo ' + MAX_IMG + ' imágenes. Elimina alguna para agregar otra.';
-      err.style.display = 'block';
-      break;
-    }
-    if (!file.type.startsWith('image/')) continue;
+  err.style.display = 'none';
+
+  const lista = Array.from(archivos).filter(function(f){ return f.type.startsWith('image/'); });
+  if (!lista.length) return;
+
+  const espacio = MAX_IMG - imagenes.length;
+  const aProcesar = lista.slice(0, espacio);
+  const descartadas = lista.length - aProcesar.length;
+
+  // Indicador mientras se comprimen (varias imágenes pueden tardar un momento)
+  const cont = document.getElementById('contadorImg');
+  cont.textContent = 'PROCESANDO ' + aProcesar.length + ' IMAGEN' + (aProcesar.length > 1 ? 'ES' : '') + '…';
+  cont.className = 'contador-img';
+
+  for (const file of aProcesar){
     try{
       const dataUrl = await comprimir(file);
       imagenes.push({ nombre: file.name, dataUrl: dataUrl });
@@ -756,10 +840,18 @@ async function procesarArchivos(archivos){
       err.style.display = 'block';
     }
   }
+
+  if (descartadas > 0){
+    err.textContent = 'Sólo se agregaron ' + aProcesar.length + ' imagen(es): el máximo es ' +
+                      MAX_IMG + '. Se omitieron ' + descartadas + '.';
+    err.style.display = 'block';
+  }
+
   renderPreviews();
 }
 
 function renderPreviews(){
+  actualizarBotonesImg();
   const cont = document.getElementById('previews');
   cont.innerHTML = imagenes.map(function(im, i){
     return '<div class="preview"><img src="' + im.dataUrl + '" alt="Evidencia ' + (i+1) + '">' +
