@@ -6,6 +6,7 @@
 <title>Solicitud de Equipos · T.I.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --tinta:#141414;      /* negro */
@@ -172,6 +173,21 @@
     font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;cursor:pointer;
   }
   #confirmacion button:hover{background:var(--niebla)}
+  @media print{
+    body{background:#fff;padding:0}
+    header{border-radius:0}
+    #formSolicitud, #overlayEnvio, .acciones-ticket{display:none !important}
+    #confirmacion{display:block !important}
+  }
+  .acciones-ticket{
+    display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px;
+  }
+  .acciones-ticket button{margin-top:0}
+  #confirmacion .btn-pdf{
+    background:var(--tinta);color:#fff;border-color:var(--tinta);
+  }
+  #confirmacion .btn-pdf:hover{background:var(--acero);border-color:var(--acero)}
+  #confirmacion .btn-pdf:disabled{opacity:.6;cursor:wait}
 
   /* Combobox con buscador */
   .combo{position:relative}
@@ -587,7 +603,10 @@
       <strong id="folioGenerado">—</strong>
     </div>
     <p>Tu solicitud fue registrada con estatus <b>PENDIENTE</b>.<br>Guarda el folio para dar seguimiento a la entrega.</p>
-    <button onclick="nuevaSolicitud()">Registrar otra solicitud</button>
+    <div class="acciones-ticket">
+      <button type="button" class="btn-pdf" onclick="descargarPDF()">⬇ Descargar ticket en PDF</button>
+      <button type="button" onclick="nuevaSolicitud()">Registrar otra solicitud</button>
+    </div>
   </div>
 
   <!-- Overlay de progreso durante el envío -->
@@ -612,6 +631,238 @@ const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyImNqNGxY2pNHsTCuk
 
 
 
+
+
+
+/**
+ * Convierte LOGO.svg a PNG para poder insertarlo en el PDF
+ * (jsPDF no admite SVG directamente). El resultado se guarda en caché.
+ * Devuelve false si no se pudo cargar — por ejemplo al abrir el HTML
+ * con file:// , donde el navegador bloquea la lectura del archivo.
+ */
+let logoPNG = null;
+
+async function obtenerLogoPNG(){
+  if (logoPNG !== null) return logoPNG;
+  try{
+    const resp = await fetch('LOGO.svg');
+    if (!resp.ok) throw new Error('LOGO.svg no encontrado');
+
+    let svg = await resp.text();
+    // El SVG usa viewBox sin width/height: se los damos para que el
+    // navegador conozca su tamaño al rasterizarlo.
+    if (!/<svg[^>]*\swidth=/.test(svg)){
+      svg = svg.replace(/<svg\s/, '<svg width="1000" height="260" ');
+    }
+
+    const url = URL.createObjectURL(new Blob([svg], { type:'image/svg+xml;charset=utf-8' }));
+
+    logoPNG = await new Promise(function(resolve, reject){
+      const img = new Image();
+      img.onload = function(){
+        // 1500 px de ancho ≈ 680 ppi al tamaño impreso: nítido de sobra.
+        // Se exporta como JPEG porque jsPDF guarda el PNG SIN comprimir
+        // (un PNG a esta resolución haría que el PDF pesara varios MB).
+        const ESCALA = 1.5;
+        const lienzo = document.createElement('canvas');
+        lienzo.width  = Math.round(1000 * ESCALA);
+        lienzo.height = Math.round(260 * ESCALA);
+        const ctx = lienzo.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+        ctx.drawImage(img, 0, 0, lienzo.width, lienzo.height);
+        URL.revokeObjectURL(url);
+        resolve(lienzo.toDataURL('image/jpeg', 0.92));
+      };
+      img.onerror = function(){
+        URL.revokeObjectURL(url);
+        reject(new Error('No se pudo rasterizar el SVG'));
+      };
+      img.src = url;
+    });
+
+  }catch(e){
+    logoPNG = false;   // se usará el respaldo dibujado
+  }
+  return logoPNG;
+}
+
+/* ================= TICKET EN PDF ================= */
+let datosTicket = null;
+
+async function descargarPDF(){
+  if (!datosTicket) return;
+
+  // Si la red corporativa bloquea el CDN, se ofrece imprimir/guardar como PDF
+  if (!window.jspdf || !window.jspdf.jsPDF){
+    alert('No se pudo cargar el generador de PDF (posible bloqueo de red).\n' +
+          'Se abrirá la ventana de impresión: elige "Guardar como PDF".');
+    window.print();
+    return;
+  }
+
+  const btn = document.querySelector('.btn-pdf');
+  btn.disabled = true;
+  btn.textContent = 'Generando…';
+
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
+
+    const ANCHO = 210, MARGEN = 18, UTIL = ANCHO - MARGEN * 2;
+    let y = 0;
+
+    // ---------- Encabezado ----------
+    doc.setFillColor(20, 20, 20);
+    doc.rect(0, 0, ANCHO, 34, 'F');
+
+    // Logo: se inserta LOGO.svg convertido a PNG, sobre una caja blanca
+    // (igual que en el encabezado de la página web)
+    const logo = await obtenerLogoPNG();
+    let xTitulo;
+
+    if (logo){
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(MARGEN, 8, 62, 18, 2, 2, 'F');
+      doc.addImage(logo, 'JPEG', MARGEN + 3, 10.7, 56, 14.6);
+      xTitulo = MARGEN + 69;
+    } else {
+      // Respaldo si LOGO.svg no está disponible (por ejemplo con file://)
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(22);
+      doc.text('BET', MARGEN, 20);
+      doc.setFillColor(141, 206, 75);
+      doc.triangle(MARGEN + 15, 12, MARGEN + 26, 17.5, MARGEN + 15, 23, 'F');
+      xTitulo = MARGEN + 34;
+    }
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    doc.text('Solicitud de Equipos', xTitulo, 17);
+    doc.setFontSize(8);
+    doc.setTextColor(170, 170, 170);
+    doc.text('Departamento de T.I.', xTitulo, 22.5);
+
+    // ---------- Recuadro del folio ----------
+    y = 46;
+    doc.setFillColor(226, 237, 214);
+    doc.setDrawColor(78, 127, 53);
+    doc.setLineWidth(0.6);
+    doc.roundedRect(MARGEN, y, UTIL, 22, 2, 2, 'FD');
+
+    doc.setTextColor(78, 127, 53);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('FOLIO DE SEGUIMIENTO', MARGEN + 6, y + 7);
+
+    doc.setTextColor(20, 20, 20);
+    doc.setFontSize(18);
+    doc.text(datosTicket.folio, MARGEN + 6, y + 16.5);
+
+    // Estatus a la derecha
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text('ESTATUS', ANCHO - MARGEN - 6, y + 7, { align:'right' });
+    doc.setFontSize(12);
+    doc.setTextColor(165, 88, 16);
+    doc.text('PENDIENTE', ANCHO - MARGEN - 6, y + 16, { align:'right' });
+
+    y += 32;
+
+    // ---------- Utilidades de dibujo ----------
+    function seccion(titulo){
+      if (y > 258){ doc.addPage(); y = 22; }
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.line(MARGEN, y, ANCHO - MARGEN, y);
+      y += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(78, 127, 53);
+      doc.text(titulo.toUpperCase(), MARGEN, y);
+      y += 7;
+    }
+
+    function fila(etiqueta, valor){
+      if (!valor) return;
+      if (y > 275){ doc.addPage(); y = 22; }
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text(etiqueta, MARGEN, y);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(35, 35, 35);
+      const lineas = doc.splitTextToSize(String(valor), UTIL - 52);
+      doc.text(lineas, MARGEN + 52, y);
+
+      y += Math.max(6.5, lineas.length * 5 + 1.5);
+    }
+
+    // ---------- Contenido ----------
+    seccion('Datos del solicitante');
+    fila('Nombre', datosTicket.solicitante);
+    fila('Puesto', datosTicket.puestoSolicitante);
+    fila('Área', datosTicket.area);
+    fila('Departamento', datosTicket.departamento);
+
+    y += 3;
+    seccion('Usuario asignado');
+    fila('Nombre', datosTicket.usuarioAsignado);
+    fila('Puesto', datosTicket.puestoUsuario);
+    fila('Usuario Beta', datosTicket.cuentaUsuario);
+
+    y += 3;
+    seccion('Motivo de la solicitud');
+    fila('Motivo', datosTicket.motivoSolicitud);
+    if (datosTicket.motivoRenovacion) fila('Motivo de renovación', datosTicket.motivoRenovacion);
+    if (datosTicket.motivoCambio)     fila('Motivo de cambio', datosTicket.motivoCambio);
+    if (datosTicket.descripcion)      fila('Descripción', datosTicket.descripcion);
+    if (datosTicket.evidencias > 0)   fila('Evidencias', datosTicket.evidencias + ' imagen(es) adjuntas en Drive');
+
+    y += 3;
+    seccion('Equipos solicitados');
+    (datosTicket.equipos || '').split('|').forEach(function(eq){
+      const t = eq.trim();
+      if (!t) return;
+      if (y > 275){ doc.addPage(); y = 22; }
+      doc.setFillColor(78, 127, 53);
+      doc.circle(MARGEN + 1.5, y - 1.2, 1.1, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(35, 35, 35);
+      doc.text(t, MARGEN + 6, y);
+      y += 6.5;
+    });
+
+    // ---------- Pie de página ----------
+    const total = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= total; p++){
+      doc.setPage(p);
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.line(MARGEN, 282, ANCHO - MARGEN, 282);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(140, 140, 140);
+      doc.text('Generado el ' + datosTicket.fecha, MARGEN, 287);
+      doc.text('Página ' + p + ' de ' + total, ANCHO - MARGEN, 287, { align:'right' });
+      doc.text('Este comprobante no representa la entrega del equipo.', MARGEN, 291);
+    }
+
+    doc.save('Ticket_' + datosTicket.folio + '.pdf');
+
+  }catch(e){
+    alert('No se pudo generar el PDF: ' + e.message);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = '⬇ Descargar ticket en PDF';
+  }
+}
 
 /* ================= BARRA DE PROGRESO ================= */
 function mostrarProgreso(mostrar){
@@ -1154,6 +1405,25 @@ document.getElementById('formSolicitud').addEventListener('submit', async functi
 
     await new Promise(function(r){ setTimeout(r, resultado.fallidas.length ? 2200 : 700); });
     mostrarProgreso(false);
+
+    // Guardar los datos para poder generar el PDF del ticket
+    datosTicket = {
+      folio: resultado.folio,
+      fecha: new Date().toLocaleString('es-MX', { dateStyle:'long', timeStyle:'short' }),
+      solicitante: payload.solicitante,
+      puestoSolicitante: payload.puestoSolicitante,
+      area: payload.area,
+      departamento: payload.departamento,
+      usuarioAsignado: payload.usuarioAsignado,
+      puestoUsuario: payload.puestoUsuario,
+      cuentaUsuario: payload.cuentaUsuario,
+      motivoSolicitud: payload.motivoSolicitud,
+      motivoRenovacion: payload.motivoRenovacion,
+      motivoCambio: payload.motivoCambio,
+      descripcion: payload.descripcion,
+      equipos: payload.equipos,
+      evidencias: imagenes.length - resultado.fallidas.length
+    };
 
     document.getElementById('folioGenerado').textContent = resultado.folio;
     document.getElementById('formSolicitud').style.display = 'none';
