@@ -202,7 +202,7 @@
   .combo-lista li.vacio:hover{background:transparent}
 
   /* Tarjetas de opción tipo radio */
-  .opciones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .opciones{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
   @media(max-width:520px){.opciones{grid-template-columns:1fr}}
   .opcion{
     display:flex;align-items:center;gap:11px;
@@ -236,6 +236,13 @@
     border-left:4px solid var(--acero);border-radius:8px;
   }
   #bloqueRenovacion.visible{display:block}
+
+  #bloqueCambioLinea{
+    display:none;margin-top:18px;padding:18px;
+    background:#fbfcfa;border:1px solid var(--linea);
+    border-left:4px solid var(--acero);border-radius:8px;
+  }
+  #bloqueCambioLinea.visible{display:block}
   #bloqueRenovacion .sub-legend{
     font-family:'JetBrains Mono',monospace;font-size:11px;
     letter-spacing:2px;text-transform:uppercase;color:var(--acero);
@@ -433,11 +440,15 @@
       <div class="opciones">
         <label class="opcion" id="optNuevoIngreso">
           <input type="radio" name="motivoSolicitud" value="NUEVO INGRESO" required>
-          <span>🆕 Nuevo ingreso</span>
+          <span>🆕 Nueva Asignación</span>
         </label>
         <label class="opcion" id="optRenovacion">
           <input type="radio" name="motivoSolicitud" value="RENOVACIÓN DE EQUIPO">
           <span>🔄 Renovación de equipo</span>
+        </label>
+        <label class="opcion" id="optCambioLinea">
+          <input type="radio" name="motivoSolicitud" value="CAMBIO DE LÍNEA TELEFÓNICA">
+          <span>📶 Cambio de línea telefónica</span>
         </label>
       </div>
 
@@ -499,9 +510,39 @@
           <div class="previews" id="previews"></div>
         </div>
       </div>
+
+      <!-- Bloque condicional: sólo visible si se elige CAMBIO DE LÍNEA TELEFÓNICA -->
+      <div id="bloqueCambioLinea">
+        <span class="sub-legend">Motivo de cambio o reposición</span>
+        <div class="opciones-lista">
+          <label class="opcion">
+            <input type="radio" name="motivoCambio" value="REASIGNACIÓN DE ROL, ÁREA O DEPARTAMENTO">
+            <span class="opcion-txt">Reasignación de rol, área o departamento
+              <span class="desc">Cambio de área o reestructuración · Transferencia de propiedad del número</span>
+            </span>
+          </label>
+          <label class="opcion">
+            <input type="radio" name="motivoCambio" value="DAÑO, PÉRDIDA O PROBLEMAS TÉCNICOS DEL CHIP (SIM)">
+            <span class="opcion-txt">Daño, pérdida o problemas técnicos del chip (SIM)
+              <span class="desc">Pérdida o robo del dispositivo · Falla o degradación de la tarjeta SIM</span>
+            </span>
+          </label>
+          <label class="opcion">
+            <input type="radio" name="motivoCambio" value="SEGURIDAD Y PRIVACIDAD">
+            <span class="opcion-txt">Seguridad y privacidad
+              <span class="desc">Acoso, llamadas no deseadas o SPAM masivo · Filtración de datos o riesgo de seguridad</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="campo" style="margin-top:16px;margin-bottom:0">
+          <label for="descripcionCambio">Descripción *</label>
+          <input type="text" id="descripcionCambio" placeholder="Describe el motivo del cambio de línea">
+        </div>
+      </div>
     </fieldset>
 
-    <fieldset>
+    <fieldset id="fsEquipos">
       <legend>Equipos solicitados</legend>
 
       <div class="equipo" id="cardLaptop">
@@ -711,26 +752,52 @@ document.querySelectorAll('input[name=motivoSolicitud]').forEach(function(r){
     document.querySelectorAll('input[name=motivoSolicitud]').forEach(function(x){
       x.closest('.opcion').classList.toggle('activa', x.checked);
     });
-    const esRenovacion = this.value === 'RENOVACIÓN DE EQUIPO';
+
+    const esRenovacion  = this.value === 'RENOVACIÓN DE EQUIPO';
+    const esCambioLinea = this.value === 'CAMBIO DE LÍNEA TELEFÓNICA';
+
     document.getElementById('bloqueRenovacion').classList.toggle('visible', esRenovacion);
-    if (!esRenovacion){
-      // Limpiar datos de renovación si se cambia a nuevo ingreso
-      document.querySelectorAll('input[name=motivoRenovacion]').forEach(function(x){
-        x.checked = false;
-        x.closest('.opcion').classList.remove('activa');
+    document.getElementById('bloqueCambioLinea').classList.toggle('visible', esCambioLinea);
+
+    // En cambio de línea no se piden equipos: se oculta la sección y se limpia
+    document.getElementById('fsEquipos').style.display = esCambioLinea ? 'none' : 'block';
+    if (esCambioLinea){
+      ['chkLaptop','chkLinea','chkCelular','chkOtros'].forEach(function(id){
+        document.getElementById(id).checked = false;
       });
+      document.getElementById('txtOtros').value = '';
+      document.querySelectorAll('.equipo').forEach(function(e){ e.classList.remove('activo'); });
+    }
+
+    // Limpiar el bloque de renovación si ya no aplica
+    if (!esRenovacion){
+      limpiarRadios('motivoRenovacion');
       document.getElementById('descripcion').value = '';
       imagenes = [];
       renderPreviews();
     }
+    // Limpiar el bloque de cambio de línea si ya no aplica
+    if (!esCambioLinea){
+      limpiarRadios('motivoCambio');
+      document.getElementById('descripcionCambio').value = '';
+    }
   });
 });
 
-// Resaltar tarjeta activa del motivo de renovación
-document.querySelectorAll('input[name=motivoRenovacion]').forEach(function(r){
-  r.addEventListener('change', function(){
-    document.querySelectorAll('input[name=motivoRenovacion]').forEach(function(x){
-      x.closest('.opcion').classList.toggle('activa', x.checked);
+function limpiarRadios(nombre){
+  document.querySelectorAll('input[name=' + nombre + ']').forEach(function(x){
+    x.checked = false;
+    x.closest('.opcion').classList.remove('activa');
+  });
+}
+
+// Resaltar la tarjeta activa en los sub-motivos (renovación y cambio de línea)
+['motivoRenovacion','motivoCambio'].forEach(function(nombre){
+  document.querySelectorAll('input[name=' + nombre + ']').forEach(function(r){
+    r.addEventListener('change', function(){
+      document.querySelectorAll('input[name=' + nombre + ']').forEach(function(x){
+        x.closest('.opcion').classList.toggle('activa', x.checked);
+      });
     });
   });
 });
@@ -978,7 +1045,26 @@ document.getElementById('formSolicitud').addEventListener('submit', async functi
     return;
   }
   const motivoSolicitud = radioMotivo.value;
-  let motivoRenovacion = '', descripcion = '';
+  let motivoRenovacion = '', motivoCambio = '', descripcion = '';
+
+  // ---- Cambio de línea telefónica ----
+  if (motivoSolicitud === 'CAMBIO DE LÍNEA TELEFÓNICA'){
+    const radioCambio = document.querySelector('input[name=motivoCambio]:checked');
+    if (!radioCambio){
+      err.textContent = 'Selecciona el motivo de cambio o reposición.';
+      err.style.display = 'block';
+      return;
+    }
+    motivoCambio = radioCambio.value;
+
+    descripcion = document.getElementById('descripcionCambio').value.trim();
+    if (!descripcion){
+      err.textContent = 'Escribe la descripción del motivo del cambio de línea.';
+      err.style.display = 'block';
+      document.getElementById('descripcionCambio').focus();
+      return;
+    }
+  }
 
   if (motivoSolicitud === 'RENOVACIÓN DE EQUIPO'){
     const radioRenov = document.querySelector('input[name=motivoRenovacion]:checked');
@@ -1023,7 +1109,11 @@ document.getElementById('formSolicitud').addEventListener('submit', async functi
     }
     equipos.push('OTRO: ' + otro.toUpperCase());
   }
-  if (equipos.length === 0){
+  // En cambio de línea no aplica la selección de equipos
+  if (motivoSolicitud === 'CAMBIO DE LÍNEA TELEFÓNICA'){
+    equipos.length = 0;
+    equipos.push('LINEA TELEFONICA');
+  } else if (equipos.length === 0){
     err.textContent = 'Selecciona al menos un tipo de equipo.';
     err.style.display = 'block';
     return;
@@ -1040,6 +1130,7 @@ document.getElementById('formSolicitud').addEventListener('submit', async functi
     cuentaUsuario: document.getElementById('cuentaUsuario').value.trim(),
     motivoSolicitud: motivoSolicitud,
     motivoRenovacion: motivoRenovacion,
+    motivoCambio: motivoCambio,
     descripcion: descripcion,
     equipos: equipos.join(' | ')
     // Las imágenes NO van aquí: se envían después, una por una,
@@ -1090,6 +1181,8 @@ function nuevaSolicitud(){
   document.querySelectorAll('.equipo').forEach(function(c){ c.classList.remove('activo'); });
   document.querySelectorAll('.opcion').forEach(function(o){ o.classList.remove('activa'); });
   document.getElementById('bloqueRenovacion').classList.remove('visible');
+  document.getElementById('bloqueCambioLinea').classList.remove('visible');
+  document.getElementById('fsEquipos').style.display = 'block';
   imagenes = [];
   renderPreviews();
   document.getElementById('confirmacion').style.display = 'none';
